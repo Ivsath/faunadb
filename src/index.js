@@ -31,7 +31,6 @@ app.post(
     try {
       // Finds the validation errors in this request and wraps them in an object with handy functions
       const errors = validationResult(req)
-      console.log(req.body)
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() })
       }
@@ -45,9 +44,9 @@ app.post(
 
       const doc = await client.query(Create(Collection('tweets'), { data }))
 
-      res.json(doc)
+      res.send(doc)
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   },
 )
@@ -60,7 +59,7 @@ app.get('/tweets/:id', async (req, res) => {
 
     res.send(doc)
   } catch (err) {
-    console.log(err)
+    console.error(err)
   }
 })
 
@@ -77,7 +76,41 @@ app.get('/users/:name/tweets', async (req, res) => {
 
     res.send(docs)
   } catch (err) {
-    console.log(err)
+    console.error(err)
+  }
+})
+
+app.post('/relationship', async (req, res) => {
+  try {
+    const data = {
+      follower: Call(Fn('getUser'), 'ivsath'),
+      followee: Call(Fn('getUser'), 'gaby'),
+    }
+    const doc = await client.query(
+      Create(Collection('relationships'), { data }),
+    )
+
+    res.send(doc)
+  } catch (err) {
+    console.error(err)
+  }
+})
+
+app.get('/feed', async (req, res) => {
+  try {
+    const docs = await client.query(
+      Paginate(
+        Join(
+          Match(Index('followees_by_follower'), Call(Fn('getUser'), 'gaby')),
+          Index('tweets_by_user'),
+        ),
+      ),
+    )
+    // Select('ref', Call(Fn('getUser'), 'ivsath')),
+    res.send(docs)
+  } catch (err) {
+    console.error(err)
+    console.log(err.requestResult.responseContent.errors[0])
   }
 })
 
