@@ -39,7 +39,7 @@ app.post(
       const { user, text } = req.body
 
       const data = {
-        user: Select('ref', Get(Match(Index('users_by_name'), user))),
+        user: Select('ref', Call(Fn('getUser'), user)),
         text,
       }
 
@@ -70,7 +70,7 @@ app.get('/users/:name/tweets', async (req, res) => {
       Paginate(
         Match(
           Index('tweets_by_user'),
-          Select('ref', Get(Match(Index('users_by_name'), req.params.name))),
+          Select('ref', Call(Fn('getUser'), req.params.name)),
         ),
       ),
     )
